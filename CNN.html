@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期末評量成果：探索卷積神經網路 (CNN)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons for modern UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- MathJax for rendering LaTeX mathematical formulas beautifully -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f4ff',
+                            100: '#d9e2ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        },
+                        neon: {
+                            teal: '#0ea5e9',
+                            emerald: '#10b981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .matrix-cell {
+            transition: all 0.2s ease;
+        }
+        .active-kernel {
+            background-color: rgba(14, 165, 233, 0.25);
+            border: 2px solid #0ea5e9;
+        }
+        .current-pixel {
+            background-color: rgba(16, 185, 129, 0.4) !important;
+            border: 2px solid #10b981;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans leading-relaxed">
+
+    <!-- Sticky Navigation Bar -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 text-white shadow-lg">
+                        <i class="fa-solid fa-brain text-xl"></i>
+                    </span>
+                    <span class="font-bold text-xl bg-gradient-to-r from-brand-600 to-neon-teal bg-clip-text text-transparent">
+                        CNN 學習成果網頁
+                    </span>
+                </div>
+                <div class="hidden md:flex space-x-6">
+                    <a href="#intro" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">演算法介紹</a>
+                    <a href="#visualizer" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">互動視覺化</a>
+                    <a href="#ai-record" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">AI 輔助紀錄</a>
+                    <a href="#verification" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">查證與修正</a>
+                    <a href="#case" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">應用案例</a>
+                    <a href="#reflection" class="text-slate-600 hover:text-brand-600 font-medium transition-colors">學習反思</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Header & Student Info Input Card -->
+    <header class="relative bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-white overflow-hidden py-16 px-4">
+        <!-- Abstract Tech Background Grid/Dots -->
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div class="absolute -top-40 -right-40 w-96 h-96 bg-brand-500 rounded-full blur-3xl opacity-20"></div>
+        <div class="absolute -bottom-40 -left-40 w-96 h-96 bg-neon-teal rounded-full blur-3xl opacity-20"></div>
+
+        <div class="max-w-5xl mx-auto relative z-10 text-center">
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mb-4 uppercase tracking-wider">
+                Artificial Intelligence • Computer Vision
+            </span>
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+                探索卷積神經網路
+                <span class="block text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-neon-teal to-neon-emerald mt-2">
+                    Convolutional Neural Network (CNN)
+                </span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+                本網頁為期末評量之個人化學習成果。透過與 AI 協同學習，深入剖析 CNN 空間特徵提取能力，並實作互動式卷積動態演示，展示深度學習在計算機視覺的無限潛力。
+            </p>
+
+            <!-- Student Info Display Frame -->
+            <div class="glass-card text-slate-800 rounded-2xl p-6 max-w-lg mx-auto shadow-2xl border border-slate-100/20 text-left">
+                <div class="flex flex-col items-center justify-center text-center">
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4"><i class="fa-solid fa-user-graduate mr-1"></i> Project Presenter</p>
+                    <div class="space-y-3 w-full">
+                        <div class="flex items-center justify-center gap-3 text-xl font-extrabold text-slate-900 bg-slate-100/50 p-2 rounded-lg">
+                            <i class="fa-solid fa-id-card text-brand-500"></i>
+                            <span>學號：</span>
+                            <span class="text-brand-600">111316014</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-3 text-xl font-extrabold text-slate-900 bg-slate-100/50 p-2 rounded-lg">
+                            <i class="fa-solid fa-user text-brand-500"></i>
+                            <span>姓名：</span>
+                            <span class="text-brand-600">果詣恩</span>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 text-md font-semibold text-slate-600 pt-2">
+                            <i class="fa-solid fa-book-bookmark text-neon-teal"></i>
+                            <span>選定主題：</span>
+                            <span class="bg-teal-50 text-teal-700 px-2.5 py-0.5 rounded-full text-xs font-bold border border-teal-200">CNN (影像辨識模型)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+
+        <!-- SECTION 1: 演算法介紹 -->
+        <section id="intro" class="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100">
+            <div class="border-l-4 border-brand-600 pl-4 mb-8">
+                <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Task 01 & 04</span>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 mt-1">演算法介紹與概念視覺化：什麼是 CNN？</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div class="lg:col-span-7 space-y-6">
+                    <p class="text-slate-600 text-lg leading-relaxed">
+                        <strong class="text-slate-900">卷積神經網路（Convolutional Neural Network，簡稱 CNN）</strong>是一種影像辨識模型，在圖像和語音辨識方面能夠給出好的結果。它的架構靈感來自於生物的視覺神經系統，是透過「局部掃描」的方式，去取出圖片中重要的特徵，最後綜合起來去辨識影像。
+                    </p>
+
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-2"><i class="fa-solid fa-crosshairs text-brand-500 mr-2"></i>主要解決什麼問題？</h4>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            在 CNN 演算法出來之前，影像處理遇到的難點是<strong>「只要位置偏移了，就不認得了」</strong>。而 CNN 透過滑動掃描的機制，確保了無論特徵出現在畫面的哪一個角落，都能被精準捕捉並辨識出來。
+                        </p>
+                    </div>
+
+                    <!-- Visualized Flowchart Image -->
+                    <div class="mt-6 border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                        <div class="bg-slate-100 px-4 py-2 border-b border-slate-200 text-sm font-bold text-slate-700 flex items-center">
+                            <i class="fa-solid fa-diagram-project mr-2 text-brand-500"></i> CNN 架構流程圖
+                        </div>
+                        <div class="p-2">
+                            <img src="./CNN.png" alt="CNN 運作流程圖" class="w-full h-auto rounded hover:scale-[1.02] transition-transform duration-300">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl"></div>
+                    <h3 class="font-extrabold text-lg mb-4 text-neon-teal flex items-center"><i class="fa-solid fa-gears mr-2"></i>基本運作流程說明</h3>
+                    
+                    <div class="space-y-4 text-sm relative z-10">
+                        <div class="flex items-start space-x-3">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">1</span>
+                            <div>
+                                <h4 class="font-bold text-slate-100">卷積層</h4>
+                                <p class="text-slate-300 text-xs mt-0.5">會在圖形上移動，逐步檢測圖像的不同特徵，這些過濾器每次只處理圖像的一個小區域，並計算該區域的特徵。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">2</span>
+                            <div>
+                                <h4 class="font-bold text-slate-100">激活函數</h4>
+                                <p class="text-slate-300 text-xs mt-0.5">將計算出的負值歸零，只保留有用的強烈訊號（過濾雜訊）。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">3</span>
+                            <div>
+                                <h4 class="font-bold text-slate-100">池化層</h4>
+                                <p class="text-slate-300 text-xs mt-0.5">負責縮減特徵圖來減少計算複雜度，並提高計算效率。</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white">4</span>
+                            <div>
+                                <h4 class="font-bold text-slate-100">全連接層</h4>
+                                <p class="text-slate-300 text-xs mt-0.5">將前面歸納出的特徵綜合起來，給出最終的辨識結果（例如判斷是貓還是狗）。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: 互動視覺化 (CNN Playground) -->
+        <section id="visualizer" class="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100">
+            <div class="border-l-4 border-brand-600 pl-4 mb-4">
+                <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Task 04 (互動實作)</span>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 mt-1">互動視覺化說明：卷積掃描運作概念</h2>
+            </div>
+            <p class="text-slate-600 mb-8 leading-relaxed max-w-4xl">
+                這裡以視覺化方式呈現前述「卷積層」的運作。您可以點選「$5 \times 5$ 輸入矩陣」更改數值，或點擊「單步執行 / 自動播放」。右側會即時模擬滑動掃描機制，將局部特徵運算後輸出特徵圖，這正是 CNN 確保特徵偏移也能辨識的核心！
+            </p>
+
+            <!-- Playground Interface -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                <!-- Left panel: Control & Inputs -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white p-4 rounded-xl border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-3 flex items-center justify-between">
+                            <span>1. 預設過濾器設定</span>
+                        </h4>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="block text-xs text-slate-500 font-bold mb-1">卷積核預設風格：</label>
+                                <select id="kernel-preset" class="w-full px-3 py-1.5 rounded border border-slate-300 bg-slate-50 text-slate-700 font-medium focus:ring-2 focus:ring-brand-500">
+                                    <option value="horizontal">水平邊緣檢測 (Horizontal Edge)</option>
+                                    <option value="vertical">垂直邊緣檢測 (Vertical Edge)</option>
+                                    <option value="sharpen">影像銳化 (Sharpen)</option>
+                                    <option value="all-ones">均值模糊 (All Ones)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-3"><i class="fa-solid fa-play text-neon-emerald mr-2"></i>播放控制台</h4>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btn-prev" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-lg text-xs transition-colors"><i class="fa-solid fa-backward mr-1"></i>上一步</button>
+                                <button id="btn-next" class="px-3 py-2 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-lg text-xs transition-all shadow-md"><i class="fa-solid fa-forward mr-1"></i>單步執行</button>
+                            </div>
+                            <button id="btn-auto" class="w-full px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-lg text-xs transition-colors flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-play"></i> <span id="auto-btn-text">自動播放掃描</span>
+                            </button>
+                            <button id="btn-reset" class="w-full px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-lg text-xs transition-colors border border-rose-200">
+                                <i class="fa-solid fa-rotate-left mr-1"></i>重置回起點
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 text-slate-100 p-4 rounded-xl text-xs space-y-2">
+                        <h5 class="font-bold text-neon-teal border-b border-slate-800 pb-1 flex items-center"><i class="fa-solid fa-calculator mr-1"></i>當前數學公式計算步驟：</h5>
+                        <p class="text-[11px] leading-relaxed text-slate-300">
+                            卷積運算對應位置元素相乘後求和：
+                        </p>
+                        <div id="math-steps" class="font-mono bg-black/40 p-2.5 rounded text-amber-300 break-words leading-normal min-h-[50px]">
+                            點選單步執行看計算過程...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle/Right panel: Matrix display areas -->
+                <div class="lg:col-span-8 flex flex-col md:flex-row items-center justify-around gap-6">
+                    <!-- 1. Input Image Matrix (5x5) -->
+                    <div class="text-center">
+                        <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">A. 圖片像素矩陣 (5x5)</span>
+                        <div class="grid grid-cols-5 gap-1.5 p-2 bg-white rounded-xl border border-slate-200 shadow-inner w-56 h-56" id="input-matrix-grid"></div>
+                        <span class="text-[10px] text-slate-400 mt-2 block"><i class="fa-solid fa-info-circle mr-1"></i>可點擊上方矩陣直接更改 0 或 1</span>
+                    </div>
+
+                    <!-- Operator Indicator -->
+                    <div class="text-center font-bold text-slate-400 text-2xl">
+                        <span class="block text-xs text-slate-500 uppercase tracking-widest mb-1">運算</span>
+                        <div class="flex flex-col items-center">
+                            <i class="fa-solid fa-times text-slate-400"></i>
+                            <span class="text-xs bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded font-mono mt-1">過濾器</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Kernel Matrix (3x3) -->
+                    <div class="text-center">
+                        <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">B. 卷積核 (3x3)</span>
+                        <div class="grid grid-cols-3 gap-1 p-2 bg-slate-900 rounded-xl border border-slate-800 shadow-xl w-36 h-36" id="kernel-matrix-grid"></div>
+                    </div>
+
+                    <!-- Equal Indicator -->
+                    <div class="text-center font-bold text-slate-400 text-2xl">
+                        <span class="block text-xs text-slate-500 uppercase tracking-widest mb-1">輸出</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+
+                    <!-- 3. Output Feature Map (3x3) -->
+                    <div class="text-center">
+                        <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">C. 特徵圖 (3x3)</span>
+                        <div class="grid grid-cols-3 gap-2 p-2 bg-white rounded-xl border border-slate-300 shadow-md w-36 h-36" id="output-matrix-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: AI 輔助學習紀錄 -->
+        <section id="ai-record" class="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100">
+            <div class="border-l-4 border-brand-600 pl-4 mb-8">
+                <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Task 02</span>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 mt-1">AI 輔助學習紀錄</h2>
+            </div>
+
+            <div class="space-y-6">
+                <!-- AI Chat Screenshots -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6">
+                    <p class="text-sm font-bold text-slate-600 mb-4"><i class="fa-solid fa-comments text-brand-500 mr-2"></i>與 AI 對話截圖證明</p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="rounded-lg overflow-hidden shadow-sm border border-slate-200 bg-white">
+                            <img src="./1.png" alt="AI對話截圖 1" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <div class="rounded-lg overflow-hidden shadow-sm border border-slate-200 bg-white">
+                            <img src="./2.png" alt="AI對話截圖 2" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-300">
+                        </div>
+                        <div class="rounded-lg overflow-hidden shadow-sm border border-slate-200 bg-white">
+                            <img src="./3.png" alt="AI對話截圖 3" class="w-full h-auto object-cover hover:scale-105 transition-transform duration-300">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-6 max-w-5xl mx-auto">
+                    <!-- Q&A Section -->
+                    <div class="bg-slate-100 rounded-2xl p-5 border border-slate-200">
+                        <h4 class="font-bold text-slate-800 mb-3"><i class="fa-solid fa-comment-dots text-brand-600 mr-2"></i>1. 我問了 AI 什麼問題？</h4>
+                        <p class="text-sm text-slate-600 mb-2">為了從零開始建構對 CNN 的理解，我請 AI 扮演資深老師，並依序詢問了三個核心問題：</p>
+                        <ul class="list-decimal pl-5 text-sm text-slate-700 font-medium space-y-1">
+                            <li>請教我 CNN 是什麼？</li>
+                            <li>這個演算法主要解決了什麼問題？</li>
+                            <li>基本的運作流程為何？</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-brand-50 rounded-2xl p-5 border border-brand-100">
+                        <h4 class="font-bold text-slate-800 mb-3"><i class="fa-solid fa-robot text-brand-600 mr-2"></i>2. AI 的回答重點是什麼？</h4>
+                        <ul class="space-y-3 text-sm text-slate-700">
+                            <li><strong class="text-brand-700">概念引入：</strong> AI 將圖片比喻為 C++ 或 Java 中的 2D Array，說明電腦眼中的圖片只是一堆數字。</li>
+                            <li><strong class="text-brand-700">痛點分析：</strong> AI 用「打散拼圖的災難」來比喻傳統神經網路強迫將圖片拉成一維直線的缺點，清楚點出「破壞空間關係」是傳統 AI 的致命傷。</li>
+                            <li><strong class="text-brand-700">流程視覺化：</strong> AI 將 CNN 運作流程比喻為「高科技影像辨識工廠」的流水線，將抽象的演算法具象化為各個標準工作站。</li>
+                        </ul>
+                    </div>
+
+                    <!-- Insight Note -->
+                    <div class="bg-gradient-to-r from-neon-teal/10 to-brand-500/10 border-l-4 border-neon-teal p-5 rounded-r-xl mt-4">
+                        <h4 class="font-bold text-slate-900 mb-2"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i>3. 這些回答如何幫助我理解？</h4>
+                        <p class="text-slate-700 text-sm leading-relaxed">
+                            AI 提供的解答跳脫了生硬的數學公式，特別是「打散的拼圖」與「程式語言 2D Array」的比喻，讓我能快速且直觀地理解 CNN 為何必須保留二維空間特徵。這幫助我在撰寫前面的「演算法介紹」時，能夠真正用自己的話將核心概念表達出來，而不是單純複製維基百科的定義。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: 查證與修正 -->
+        <section id="verification" class="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100">
+            <div class="border-l-4 border-brand-600 pl-4 mb-8">
+                <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Task 03</span>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 mt-1">問題與查證：深挖原始資訊</h2>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl">
+                    <h4 class="text-slate-800 font-bold mb-2"><i class="fa-solid fa-magnifying-glass text-amber-600 mr-2"></i>選擇 AI 回答中的重點進行查證：</h4>
+                    <p class="text-slate-700 text-sm leading-relaxed">
+                        我請 AI 總結了 CNN 的基本運作流程。AI 在回答中列出了四個關鍵步驟：<strong>卷積層、激活函數 (ReLU)、池化層，以及全連接層</strong>。<br><br>
+                        但在我自己上網查到的中文資訊中，通常只找到「卷積層」和「池化層」，這讓我產生了疑惑。
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-slate-800 mb-3"><i class="fa-solid fa-shield-halved text-brand-600 mr-2"></i>查證過程與工具輔助</h4>
+                    <div class="space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <p>
+                            為了解決疑惑，我主動請 AI 給我它的參考資訊。然而，AI 提供的是一篇全英文的學術參考資料（例如史丹佛教材）。
+                        </p>
+                        <div class="flex items-center gap-4 bg-white p-4 rounded border border-slate-200 shadow-sm">
+                            <div class="text-3xl text-brand-500"><i class="fa-solid fa-book-open-reader"></i></div>
+                            <div>
+                                <p class="font-bold text-slate-800">導入 NotebookLM 進行學習</p>
+                                <p class="text-xs mt-1">面對生硬的英文資料，我沒有放棄，而是將這份文獻丟到 Google 的 <strong>NotebookLM</strong> 裡面去做輔助學習與分析。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 border border-blue-200 p-5 rounded-xl">
+                    <h4 class="font-bold text-slate-900 text-sm mb-2 flex items-center"><i class="fa-solid fa-circle-check text-brand-600 mr-2"></i>查證結果與修正：</h4>
+                    <p class="text-sm text-slate-700 leading-relaxed">
+                        經過 NotebookLM 的解析與交叉比對，我證實了 AI 的說法是正確的！一個完整的 CNN 模型架構中，<strong>確實包含了「激活函數（用來過濾雜訊）」和「全連接層（用來綜合特徵給出結果）」</strong>。這讓我修正了原本不完整的網路中文資訊，獲得了最準確的知識架構。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: 實際應用案例 -->
+        <section id="case" class="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100">
+            <div class="border-l-4 border-brand-600 pl-4 mb-8">
+                <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Task 05</span>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 mt-1">CNN 的常見應用場景</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Case 1 -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl mb-4">
+                        <i class="fa-solid fa-images"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-2">影像辨識與分類<br><span class="text-xs font-normal text-slate-500">Image Classification</span></h4>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        這是 CNN 最基礎也最常見的應用。例如智慧型手機的相簿能自動將成千上萬張照片分類為「人物」、「風景」、「美食」或「寵物」；社群平台也利用此技術自動過濾並阻擋含有暴力或不當內容的圖片。
+                    </p>
+                </div>
+
+                <!-- Case 2 -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-xl mb-4">
+                        <i class="fa-solid fa-car"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-2">自動駕駛與物件偵測<br><span class="text-xs font-normal text-slate-500">Autonomous Driving & Object Detection</span></h4>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        CNN 不僅能辨識圖片中有什麼，還能精準框出目標物「在哪裡」。在自動駕駛系統中，車載電腦必須依靠 CNN 即時掃描畫面，快速偵測並追蹤前方的車輛、行人與紅綠燈，以確保行車安全。
+                    </p>
+                </div>
+
+                <!-- Case 3 -->
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 hover:shadow-md transition-shadow">
+                    <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center text-xl mb-4">
+                        <i class="fa-solid fa-user-doctor"></i>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mb-2">醫學影像輔助分析<br><span class="text-xs font-normal text-slate-500">Medical Image Analysis</span></h4>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        CNN 被大量投入於智慧醫療領域，用來協助專業醫師判讀 X 光片、MRI 或 CT 掃描圖。模型能夠自動標示出肉眼難以察覺的微小病灶或早期腫瘤區域，大幅減輕醫護人員負擔並提高診斷準確率。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: 學習反思 -->
+        <section id="reflection" class="bg-white rounded-3xl p-8 md:p-10 shadow-sm border border-slate-100">
+            <div class="border-l-4 border-brand-600 pl-4 mb-8">
+                <span class="text-xs font-bold text-brand-600 uppercase tracking-widest">Task 06</span>
+                <h2 class="text-2xl md:text-3xl font-black text-slate-900 mt-1">學習反思</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <span class="text-brand-600 font-bold text-lg mb-3 block"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>學習助教的優勢</span>
+                    <p class="text-slate-700 text-sm leading-relaxed">
+                        在這次撰寫 CNN 演算法報告的過程中，我深刻體會到將 AI 作為「學習助教」的優勢。AI 能將生硬的學術名詞轉化為好懂的比喻，大幅降低了初學者的進入門檻。
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                    <span class="text-neon-emerald font-bold text-lg mb-3 block"><i class="fa-solid fa-book-open mr-2"></i>查證過程帶來的啟發</span>
+                    <p class="text-slate-700 text-sm leading-relaxed">
+                        這次作業最大的收穫，在於「查證能力」的提升。當我對 AI 提出的 <strong>「激活函數與全連接層」</strong> 產生疑問時，我學會了主動要求 AI 提供原始文獻。<br><br>面對艱澀的史丹佛全英文教材，我沒有放棄，而是進一步利用 <strong>NotebookLM</strong> 這樣的工具來輔助閱讀與交叉比對。這讓我領悟到，未來的學習不再是死讀書，而是「如何精準提問、如何善用工具查核真偽、如何解讀第一手資料」的整合能力。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Page Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 text-slate-400 py-12 text-center text-xs">
+        <div class="max-w-7xl mx-auto px-4 space-y-4">
+            <p>
+                本網頁專為 <strong class="text-white">期末評量成果說明</strong> 製作。主題：卷積神經網路 (CNN) 學習成果報告。
+            </p>
+            <p>
+                &copy; <span id="footer-year">2026</span> 果詣恩. All Rights Reserved. Designed for Github Pages deployment.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Interactive JS logic for visualizer & dynamics -->
+    <script>
+        // ----------------- CNN INTERACTIVE PLAYGROUND LOGIC -----------------
+        let inputMatrix = [
+            [1, 1, 1, 0, 0],
+            [0, 1, 1, 1, 0],
+            [0, 0, 1, 1, 1],
+            [0, 0, 1, 1, 0],
+            [0, 1, 1, 0, 0]
+        ];
+
+        const kernelPresets = {
+            horizontal: [
+                [ 1,  1,  1],
+                [ 0,  0,  0],
+                [-1, -1, -1]
+            ],
+            vertical: [
+                [ 1,  0, -1],
+                [ 1,  0, -1],
+                [ 1,  0, -1]
+            ],
+            sharpen: [
+                [ 0, -1,  0],
+                [-1,  5, -1],
+                [ 0, -1,  0]
+            ],
+            'all-ones': [
+                [ 1,  1,  1],
+                [ 1,  1,  1],
+                [ 1,  1,  1]
+            ]
+        };
+
+        let currentPreset = 'horizontal';
+        let kernelMatrix = kernelPresets[currentPreset];
+
+        let outputMatrix = [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ];
+
+        let currentStep = 0; 
+        let autoPlayInterval = null;
+
+        const inputGrid = document.getElementById('input-matrix-grid');
+        const kernelGrid = document.getElementById('kernel-matrix-grid');
+        const outputGrid = document.getElementById('output-matrix-grid');
+        const mathSteps = document.getElementById('math-steps');
+        const presetSelect = document.getElementById('kernel-preset');
+
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnAuto = document.getElementById('btn-auto');
+        const autoBtnText = document.getElementById('auto-btn-text');
+        const btnReset = document.getElementById('btn-reset');
+
+        function renderInputGrid() {
+            inputGrid.innerHTML = '';
+            const kRow = Math.floor(currentStep / 3);
+            const kCol = currentStep % 3;
+
+            for (let r = 0; r < 5; r++) {
+                for (let c = 0; c < 5; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'matrix-cell border border-slate-200 rounded flex items-center justify-center font-bold text-sm cursor-pointer select-none';
+                    cell.innerText = inputMatrix[r][c];
+                    
+                    const inKernel = (r >= kRow && r < kRow + 3 && c >= kCol && c < kCol + 3);
+                    if (inKernel) {
+                        cell.classList.add('active-kernel');
+                        if (r === kRow + 1 && c === kCol + 1) {
+                            cell.classList.add('current-pixel');
+                        }
+                    } else {
+                        cell.classList.add('bg-slate-50', 'text-slate-700');
+                    }
+
+                    cell.addEventListener('click', () => {
+                        inputMatrix[r][c] = inputMatrix[r][c] === 1 ? 0 : 1;
+                        cell.innerText = inputMatrix[r][c];
+                        calculateAndRender();
+                    });
+
+                    inputGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function renderKernelGrid() {
+            kernelGrid.innerHTML = '';
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'border border-slate-700 rounded bg-slate-800 text-neon-teal font-mono text-xs flex items-center justify-center font-bold';
+                    cell.innerText = kernelMatrix[r][c];
+                    kernelGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function calculateAndRender() {
+            const kRow = Math.floor(currentStep / 3);
+            const kCol = currentStep % 3;
+
+            let mathString = '';
+            let sum = 0;
+
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const imgVal = inputMatrix[kRow + r][kCol + c];
+                    const kerVal = kernelMatrix[r][c];
+                    const prod = imgVal * kerVal;
+                    sum += prod;
+
+                    mathString += `(${imgVal} × ${kerVal})`;
+                    if (r < 2 || c < 2) mathString += ' + ';
+                }
+            }
+            mathString += ` = ${sum}`;
+            mathSteps.innerHTML = mathString;
+
+            for (let outR = 0; outR < 3; outR++) {
+                for (let outC = 0; outC < 3; outC++) {
+                    let total = 0;
+                    for (let r = 0; r < 3; r++) {
+                        for (let c = 0; c < 3; c++) {
+                            total += inputMatrix[outR + r][outC + c] * kernelMatrix[r][c];
+                        }
+                    }
+                    outputMatrix[outR][outC] = total;
+                }
+            }
+
+            outputGrid.innerHTML = '';
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'border border-slate-300 rounded font-bold text-sm flex items-center justify-center transition-all duration-300';
+                    cell.innerText = outputMatrix[r][c];
+
+                    const index = r * 3 + c;
+                    if (index === currentStep) {
+                        cell.className += ' bg-neon-emerald text-white ring-2 ring-emerald-400 scale-105 shadow';
+                    } else if (index < currentStep) {
+                        cell.className += ' bg-emerald-50 text-slate-700';
+                    } else {
+                        cell.className += ' bg-slate-100 text-slate-400';
+                    }
+
+                    outputGrid.appendChild(cell);
+                }
+            }
+
+            renderInputGrid();
+        }
+
+        presetSelect.addEventListener('change', (e) => {
+            currentPreset = e.target.value;
+            kernelMatrix = kernelPresets[currentPreset];
+            renderKernelGrid();
+            calculateAndRender();
+        });
+
+        btnNext.addEventListener('click', () => {
+            currentStep = (currentStep + 1) % 9;
+            calculateAndRender();
+        });
+
+        btnPrev.addEventListener('click', () => {
+            currentStep = (currentStep - 1 + 9) % 9;
+            calculateAndRender();
+        });
+
+        btnReset.addEventListener('click', () => {
+            currentStep = 0;
+            calculateAndRender();
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                autoBtnText.innerText = "自動播放掃描";
+            }
+        });
+
+        btnAuto.addEventListener('click', () => {
+            if (autoPlayInterval) {
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                autoBtnText.innerText = "自動播放掃描";
+            } else {
+                autoBtnText.innerText = "暫停掃描";
+                autoPlayInterval = setInterval(() => {
+                    currentStep = (currentStep + 1) % 9;
+                    calculateAndRender();
+                }, 1500);
+            }
+        });
+
+        renderKernelGrid();
+        calculateAndRender();
+
+    </script>
+</body>
+</html>
